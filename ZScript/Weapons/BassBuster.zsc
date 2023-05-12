@@ -1,0 +1,234 @@
+class BassBuster : BusterBase
+{
+	action void A_BassTranslate()
+	{
+		// Cast and null-check the class:
+		let fish = BassPlayer(self);
+		if (!fish)
+			return;
+
+		switch (fish.curStyleType) {
+			case BassPlayer.Form_Normal:
+				A_OverlayTranslation(OverlayID(), "Bass");
+				break;
+			case BassPlayer.Form_XX:
+				A_OverlayTranslation(OverlayID(), "BassXX");
+				break;
+			default:
+				A_OverlayTranslation(OverlayID(), "MMNormStyl");
+				A_Print("Invalid Bass form.");
+				break;
+		}
+	}
+	// No need for A_SetElementTranslation.
+	action void A_EmotionCheck()
+	{
+        // Cast and null-check the class:
+        let navi = NetNaviPlayer(self);
+        if (!navi)
+            return;
+
+		switch (navi.curEmotion) {
+			case NetNaviPlayer.Emotion_Evil:
+				A_OverlayTranslation(99, "DarkSoul");
+				A_OverlayRenderStyle(99, STYLE_SUBTRACT);
+				A_OverlayAlpha(99, 0.50);
+				A_OverlayTranslation(100, "DarkSoul");
+				A_OverlayRenderStyle(100, STYLE_SUBTRACT);
+				A_OverlayAlpha(100, 0.50);
+				break;
+			case NetNaviPlayer.Emotion_FullSynchro:
+				A_OverlayTranslation(99, "FullSynchro");
+				A_OverlayRenderStyle(99, STYLE_ADD);
+				A_OverlayAlpha(99, 0.25);
+				A_OverlayTranslation(100, "FullSynchro");
+				A_OverlayRenderStyle(100, STYLE_ADD);
+				A_OverlayAlpha(100, 0.25);
+				break;
+			case NetNaviPlayer.Emotion_Angry:
+				A_OverlayTranslation(99, "Anger");
+				A_OverlayRenderStyle(99, STYLE_ADD);
+				A_OverlayAlpha(99, 0.25);
+				A_OverlayTranslation(100, "Anger");
+				A_OverlayRenderStyle(100, STYLE_ADD);
+				A_OverlayAlpha(100, 0.25);
+				break;
+			default:
+				A_OverlayRenderStyle(99, STYLE_ADD);
+				A_OverlayAlpha(99, 0);
+				A_OverlayRenderStyle(100, STYLE_ADD);
+				A_OverlayAlpha(100, 0);
+				break;
+		}
+	}
+	action void A_FireChargeShot()
+	{
+		// Cast and null-check the class:
+		let fish = BassPlayer(self);
+		if (!fish)
+			return;
+
+		switch (fish.curStyleType) {
+			case BassPlayer.Form_Normal:
+				for (int i; i < 10; i++) {
+					A_FireProjectile("MaxChargeBusterTracer", frandom(-4.275, 4.275), 0, 4, 0, 0, frandom(-4.275, 4.275));
+				}
+				A_StartSound("weapons/gun", CHAN_WEAPON);
+				A_Overlay(PSP_FLASH, "Flash");	// Flash layer
+				A_Overlay(1001, "FlashLeft");	// Flash layer
+				player.SetPSprite(OverlayID(), ResolveState("Fired"));
+//				player.SetPSprite(OverlayID(), ResolveState("Barrier"));
+				return;
+			case BassPlayer.Form_XX:
+				A_FireProjectile("HelzRolling", 0, 0, -12);
+				A_FireProjectile("HelzRolling", 0, 0, 12);
+				player.SetPSprite(OverlayID(), ResolveState("SwordSwing"));
+				return;
+			default:
+				A_FireProjectile("MaxChargeBusterTracer", frandom(-1.425, 1.425), 0, 4, 0, 0, frandom(-1.425, 1.425));
+				A_StartSound("weapons/buster/pew", CHAN_WEAPON);
+				A_Overlay(PSP_FLASH, "Flash");	// Flash layer
+				A_Overlay(1001, "FlashLeft");	// Flash layer
+				player.SetPSprite(OverlayID(), ResolveState("Fired"));
+				return;
+		}
+	}
+	Default
+	{
+		Tag "Bass Buster";
+	}
+	States
+	{
+		ClearLayer:
+			Stop;
+		Ready:
+			NBST A 1 {
+				A_WeaponReady(WRF_ALLOWRELOAD|WRF_ALLOWUSER1);	// no need for zoom
+				A_BassTranslate();
+			}
+			Loop;
+		Select:
+			TNT1 A 0 {
+				A_Overlay(99,"TopLayer");
+				A_Overlay(100,"TopLayerLeft");
+				A_Overlay(2,"BusterLeft");
+				A_BassTranslate();
+				A_SetInventory("PrimaryCharge", 0);
+			}
+			NBST A 1 A_Raise;
+			Loop;
+		Deselect:
+			TNT1 A 0 {
+				A_Overlay(99,"ClearLayer");
+				A_Overlay(100,"ClearLayer");
+				A_Overlay(2,"ClearLayer");
+//				A_BassTranslate();	// don't really need it
+				A_SetInventory("PrimaryCharge", 0);
+			}
+			NBST A 1 A_Lower;
+			Loop;
+		Charge:
+			NBST A 1 A_GiveInventory("PrimaryCharge", 1);
+			NBST A 0 A_Refire("Charge");
+			NBST A 0 A_JumpIfInventory("PrimaryCharge", 50, "FireChargeShot");
+			TNT1 A 0 { return ResolveState("FireNormalShot"); }
+		AltFire:
+		FireNormalShot:
+			NBST A 1 A_SetInventory("PrimaryCharge", 0);
+			NBST A 0 A_GiveInventory("Firing", 1);
+			NBST BB 2 Bright {
+				A_FireProjectile("MidChargeBusterTracer", frandom(-4.275, 4.275), 0, 4, 0, 0, frandom(-4.275, 4.275));
+				A_StartSound("weapons/gun", CHAN_WEAPON);
+				A_Overlay(PSP_FLASH, "Flash");	// Flash layer
+				A_Overlay(1001, "FlashLeft");	// Flash layer
+			}
+			TNT1 A 0 A_Refire("FireNormalShot");
+			TNT1 A 0 { return ResolveState("Fired"); }
+		FireChargeShot:
+			NBST A 1 {
+				A_SetInventory("PrimaryCharge", 0);
+				A_GiveInventory("Firing", 1);
+				A_FireChargeShot();
+			}
+			TNT1 A 0 { return ResolveState("Ready"); }
+
+			// Subroutine for charge effect
+		ChargeEffectFunction:
+			TNT1 A 1;
+			// if charge is full, play fully-charged animation
+			TNT1 A 0 A_JumpIfInventory("PrimaryCharge",50,"FullChargeAnim");
+			// if charge is starting, play not-charged animation
+			TNT1 A 0 A_JumpIfInventory("PrimaryCharge",1,"StartChargeAnim");
+			stop;
+
+			//Subroutine for charge sound
+		ChargeSoundFunction:
+			TNT1 A 1;
+			//If charge is full, don't play any sound
+			TNT1 A 0 A_JumpIfInventory("PrimaryCharge",50,"ChargeSoundFunction");
+			//Upon reaching 99 charge, play the charged sound
+			TNT1 A 0 A_JumpIfInventory("PrimaryCharge",49,"ChargeSound3");
+			//With 5 or more, stay silent.
+			TNT1 A 0 A_JumpIfInventory("PrimaryCharge",4,"ChargeSoundFunction");
+			//Upon reaching 3 charge, play chargesound1
+			TNT1 A 0 A_JumpIfInventory("PrimaryCharge",3,"ChargeSound2");
+			//If there's any charge, restart.
+			TNT1 A 0 A_JumpIfInventory("PrimaryCharge",1,"ChargeSoundFunction");
+			stop;
+
+		Reload:
+			NBST A 10 {
+				// Cast and null-check the class:
+				let fish = BassPlayer(self);
+				if (fish) {
+					switch (fish.curStyleType) {
+						case BassPlayer.Form_Normal:
+							fish.EmotionFace = "BSXXFAC";
+							fish.curStyleType = BassPlayer.Form_XX;
+							break;
+						case BassPlayer.Form_XX:
+							fish.EmotionFace = "BASSFAC";
+							fish.curStyleType = BassPlayer.Form_Normal;
+							break;
+						default:
+							break;
+					}
+				}
+			}
+			Goto Ready;
+
+		TopLayerLeft:
+			NBST A 1 {
+				let pss = player.FindPSprite(OverlayID());
+				let psp = player.FindPSprite(PSP_WEAPON);
+				if (pss && psp)
+				{
+					pss.sprite = psp.sprite;
+					pss.frame = psp.frame;
+				}
+				A_OverlayFlags(OverlayID(), PSPF_ALPHA|PSPF_RENDERSTYLE|PSPF_ADDWEAPON|PSPF_FLIP|PSPF_MIRROR, true);
+				A_EmotionCheck();
+			}
+			Loop;
+
+		BusterLeft:
+			NBST A 1 {
+				let pss = player.FindPSprite(OverlayID());
+				let psp = player.FindPSprite(PSP_WEAPON);
+				if (pss && psp)
+				{
+					pss.sprite = psp.sprite;
+					pss.frame = psp.frame;
+				}
+				A_OverlayFlags(OverlayID(), PSPF_ADDWEAPON|PSPF_FLIP|PSPF_MIRROR, true);
+				A_BassTranslate();
+			}
+			Loop;
+
+		FlashLeft:
+			TNT1 A 0 A_OverlayFlags(OverlayID(), PSPF_ADDWEAPON|PSPF_FLIP|PSPF_MIRROR, true);
+		Flash:
+			BSFL ABCD 1 Bright A_BassTranslate;
+			Stop;
+	}
+}

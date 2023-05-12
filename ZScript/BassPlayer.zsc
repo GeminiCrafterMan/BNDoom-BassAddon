@@ -1,0 +1,57 @@
+class BassPlayer : NetNaviPlayer
+{
+	// a sort of smaller style type enum with only two values -- normal and XX
+	enum StyleTypeValues
+	{
+		Form_Normal,
+		Form_XX
+	}
+	Default
+	{
+		NetNaviPlayer.EmotionFace "BASSFAC";
+		Player.DisplayName "Bass";
+		Player.StartItem "BassBuster";
+		Player.WeaponSlot 1, "BassBuster";
+		Player.SoundClass "megaman";
+		Player.Portrait "BASSFACE";
+	}
+	States
+	{
+		Spawn:
+			BASS A -1 A_SetTranslucent(1.00);
+			Loop;
+		See:
+			BASS BC 4;
+			Loop;
+		Missile:
+			BASS D 2;
+			BASS EF 2 Bright;
+			BASS D 1;
+			Goto Spawn;
+		Pain:
+			BASS G 9 A_Pain;
+			Goto Spawn;
+		Death:
+			BASS H 7;
+			BASS I 7 A_NoBlocking;
+			BASS J 2 Bright;
+			BASS I 2;
+			BASS J 2 Bright;
+			BASS I 2;
+			BASS J 2 Bright;
+			BASS I 30 A_SpawnItem("BN6DeathEffect", 0, 27, 0); // I had to make this an object instead of an overlay because overlays just... weren't working. // lol you stupid fuck objects cant have overlays
+			BASS J 10 Bright A_PlayerScream;
+			BASS J 3 Bright A_SetTranslucent(0.90);
+			BASS J 3 Bright A_SetTranslucent(0.80);
+			BASS J 3 Bright A_SetTranslucent(0.70);
+			BASS J 3 Bright A_SetTranslucent(0.60);
+			BASS J 3 Bright A_SetTranslucent(0.50);
+			BASS J 3 Bright A_SetTranslucent(0.40);
+			BASS J 3 Bright A_SetTranslucent(0.30);
+			BASS J 3 Bright A_SetTranslucent(0.20);
+			BASS J 3 Bright A_SetTranslucent(0.10);
+			BASS J 3 Bright A_SetTranslucent(0.00);
+			TNT1 A -1;
+			Stop;
+	}
+}
